@@ -12,18 +12,19 @@ Every figure comes from Headroom's own HTTP endpoints; nothing is stored outside
 
 ## Install
 
-Not on the Raycast Store. Build it into the local extensions folder of every Raycast app on this Mac; no Raycast account or dev server needed:
+Not on the Raycast Store. Register it with every Raycast app on this Mac; no Raycast account or long-running dev server needed:
 
 ```bash
 make install
 ```
 
-| App          | Bundle id             | Extensions folder                         | How it registers                                                                   |
-| ------------ | --------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------- |
-| Raycast      | `com.raycast.macos`   | `~/.config/raycast/extensions/headroom`   | `ray build` into the folder, then a restart (Raycast scans it at launch)           |
-| Raycast Beta | `com.raycast-x.macos` | `~/.config/raycast-x/extensions/headroom` | a short `ray develop` session with the Raycast Beta CLI (`@raycast/api@latest-v0`) |
+| App                    | Bundle id             | Extensions folder                         | How it registers                                                                   |
+| ---------------------- | --------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------- |
+| Raycast 2 (retail 2.x) | `com.raycast.macos`   | `~/.config/raycast/extensions/headroom`   | a short `ray develop` session with the project's CLI                               |
+| Raycast 1              | `com.raycast.macos`   | `~/.config/raycast/extensions/headroom`   | `ray build` into the folder, then a restart (Raycast 1 scans it at launch)         |
+| Raycast Beta           | `com.raycast-x.macos` | `~/.config/raycast-x/extensions/headroom` | a short `ray develop` session with the Raycast Beta CLI (`@raycast/api@latest-v0`) |
 
-Raycast Beta only registers a local extension through the develop handshake, which is live, so it is never restarted; the session stops after the first successful build and the extension stays installed. `make install` runs `npm ci` first when `node_modules` is missing or older than `package-lock.json`. Run it again after pulling changes. `make uninstall` removes the build from every folder and restarts the running apps; `make restart-raycast` only restarts them.
+The script reads the version of `com.raycast.macos` to tell Raycast 2 from Raycast 1. Raycast 2 and Raycast Beta only register a local extension through the develop handshake (a `raycast://cli/…` deep link that also launches the app if needed), so they are never restarted; the session stops after the first successful build and the extension stays installed. `make install` runs `npm ci` first when `node_modules` is missing or older than `package-lock.json`. Run it again after pulling changes. `make uninstall` removes the build from every folder and restarts the running apps; `make restart-raycast` only restarts them.
 
 Without `make`: `npm ci && npm run install-local`.
 

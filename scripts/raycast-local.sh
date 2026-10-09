@@ -1,19 +1,25 @@
 #!/bin/sh
-# Local install into every Raycast app present (Raycast, Raycast Beta). Usage: install|uninstall|restart.
-# Raycast reads ~/.config/raycast/extensions/<name> at launch; Raycast Beta registers via `ray develop`.
+# Local install into every Raycast app present (Raycast 2, Raycast 1, Raycast Beta). Usage: install|uninstall|restart.
+# Raycast 2 and Raycast Beta register a local extension only through the `ray develop` handshake; Raycast 1 reads
+# ~/.config/raycast/extensions/<name> at launch.
 set -eu
 
 NAME=headroom
-CLASSIC=com.raycast.macos
+RETAIL=com.raycast.macos
 BETA=com.raycast-x.macos
-CLASSIC_DIR="$HOME/.config/raycast/extensions/$NAME"
+RETAIL_DIR="$HOME/.config/raycast/extensions/$NAME"
 BETA_DIR="$HOME/.config/raycast-x/extensions/$NAME"
 
-# The Raycast Beta (0.x) CLI line; the project's 2.x CLI has no Raycast Beta target.
+# The Raycast Beta (0.x) CLI line; the project's 2.x CLI targets com.raycast.macos only.
 BETA_CLI="@raycast/api@latest-v0"
 
 installed() {
   osascript -e "path to application id \"$1\"" >/dev/null 2>&1
+}
+
+app_version() {
+  app=$(osascript -e "POSIX path of (path to application id \"$1\")")
+  /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${app%/}/Contents/Info.plist"
 }
 
 running() {
@@ -45,18 +51,23 @@ restart_app() {
   open -b "$1"
 }
 
-install_classic() {
-  rm -rf "$CLASSIC_DIR"
-  npx ray build -e dist -o "$CLASSIC_DIR"
-  echo "installed into $CLASSIC_DIR"
-  restart_app "$CLASSIC"
+# Raycast 1: build into the folder it scans at launch, then restart it.
+install_folder() {
+  rm -rf "$RETAIL_DIR"
+  npx ray build -e dist -o "$RETAIL_DIR"
+  echo "installed into $RETAIL_DIR"
+  restart_app "$RETAIL"
 }
 
-# Start `ray develop` against Raycast Beta, which registers the extension, then stop it after the first build.
-install_beta() {
+# Usage: install_develop <label> <dir> <command…>. Runs `ray develop`, whose first build registers the extension with
+# the app (launching it if needed), then stops the session; the extension stays installed. No restart needed.
+install_develop() {
+  label=$1
+  dir=$2
+  shift 2
   log=$(mktemp)
 
-  RAY_Target=x npx -y -p "$BETA_CLI" ray develop >"$log" 2>&1 &
+  "$@" >"$log" 2>&1 &
   cli=$!
 
   # Up to 3 min for the first build.
@@ -75,35 +86,40 @@ install_beta() {
   if [ "$built" -eq 0 ]; then
     cat "$log" >&2
     rm -f "$log"
-    echo "Raycast Beta registration failed." >&2
+    echo "$label registration failed." >&2
     exit 1
   fi
 
   rm -f "$log"
-  echo "installed into $BETA_DIR and registered with Raycast Beta"
+  echo "installed into $dir and registered with $label"
 }
 
 install() {
   found=0
 
-  if installed "$CLASSIC"; then
+  if installed "$RETAIL"; then
     found=1
-    install_classic
+    version=$(app_version "$RETAIL")
+    if [ "${version%%.*}" -ge 2 ]; then
+      install_develop "Raycast $version" "$RETAIL_DIR" npx ray develop
+    else
+      install_folder
+    fi
   fi
 
   if installed "$BETA"; then
     found=1
-    install_beta
+    install_develop "Raycast Beta" "$BETA_DIR" env RAY_Target=x npx -y -p "$BETA_CLI" ray develop
   fi
 
   if [ "$found" -eq 0 ]; then
-    echo "No Raycast app found (looked for $CLASSIC and $BETA)." >&2
+    echo "No Raycast app found (looked for $RETAIL and $BETA)." >&2
     exit 1
   fi
 }
 
 uninstall() {
-  for target in "$CLASSIC_DIR" "$BETA_DIR"; do
+  for target in "$RETAIL_DIR" "$BETA_DIR"; do
     if [ -d "$target" ]; then
       rm -rf "$target"
       echo "removed $target"
@@ -112,7 +128,7 @@ uninstall() {
 }
 
 restart() {
-  for id in "$CLASSIC" "$BETA"; do
+  for id in "$RETAIL" "$BETA"; do
     installed "$id" && restart_app "$id"
   done
 
