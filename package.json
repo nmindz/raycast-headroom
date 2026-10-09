@@ -1,0 +1,578 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "headroom",
+  "title": "Headroom Savings",
+  "description": "Compression savings, prefix-cache discount, quota and health metrics from your Headroom proxy",
+  "icon": "extension-icon.png",
+  "author": "nmindz",
+  "license": "MIT",
+  "categories": [
+    "Developer Tools"
+  ],
+  "platforms": [
+    "macOS"
+  ],
+  "preferences": [
+    {
+      "name": "baseUrl",
+      "type": "textfield",
+      "required": true,
+      "title": "Headroom URL",
+      "description": "Base URL of your Headroom proxy, without a trailing path. For a Docker container, use the host port you published (e.g. http://127.0.0.1:41090).",
+      "placeholder": "http://127.0.0.1:41090",
+      "default": "http://127.0.0.1:41090"
+    },
+    {
+      "name": "proxyToken",
+      "type": "password",
+      "required": false,
+      "title": "Proxy Token",
+      "description": "Only needed when Headroom runs with HEADROOM_PROXY_TOKEN (or --proxy-token). Sent as the X-Headroom-Proxy-Token header.",
+      "placeholder": "Leave empty when Headroom has no token"
+    },
+    {
+      "name": "timezone",
+      "type": "textfield",
+      "required": false,
+      "title": "Time Zone",
+      "description": "IANA time zone used for \"today\", weeks and months (e.g. America/Sao_Paulo). Leave empty to use the system time zone.",
+      "placeholder": "Auto (system time zone)"
+    },
+    {
+      "name": "quotaDisplay",
+      "type": "dropdown",
+      "required": false,
+      "title": "Quota Display",
+      "description": "Show subscription quota as consumed or remaining percentage.",
+      "default": "consumed",
+      "data": [
+        {
+          "title": "Consumed",
+          "value": "consumed"
+        },
+        {
+          "title": "Remaining",
+          "value": "remaining"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "savings-overview",
+      "title": "Savings Overview",
+      "subtitle": "Headroom",
+      "description": "Compression savings, prefix-cache discount and input cost for today, this week, this month, the current session and lifetime",
+      "mode": "view"
+    },
+    {
+      "name": "model-savings",
+      "title": "Model Savings",
+      "subtitle": "Headroom",
+      "description": "Compression savings, cache discount and input cost per model for a period or lifetime",
+      "mode": "view"
+    },
+    {
+      "name": "prefix-cache",
+      "title": "Prefix Cache",
+      "subtitle": "Headroom",
+      "description": "Provider prefix-cache discount, hit rate, cache busts and TTL mix",
+      "mode": "view"
+    },
+    {
+      "name": "compression-stats",
+      "title": "Compression Stats",
+      "subtitle": "Headroom",
+      "description": "Compression strategies, router decisions, waste signals and pipeline timing",
+      "mode": "view"
+    },
+    {
+      "name": "agent-usage",
+      "title": "Agent Usage",
+      "subtitle": "Headroom",
+      "description": "Tokens sent and saved per client agent since the proxy started",
+      "mode": "view"
+    },
+    {
+      "name": "subscription-quotas",
+      "title": "Subscription Quotas",
+      "subtitle": "Headroom",
+      "description": "Anthropic 5-hour and 7-day windows plus Codex and Copilot quotas tracked by Headroom",
+      "mode": "view"
+    },
+    {
+      "name": "recent-requests",
+      "title": "Recent Requests",
+      "subtitle": "Headroom",
+      "description": "Latest proxied requests with tokens saved, transforms and latency",
+      "mode": "view"
+    },
+    {
+      "name": "proxy-health",
+      "title": "Proxy Health",
+      "subtitle": "Headroom",
+      "description": "Readiness checks, version, uptime, latency and runtime state of the proxy",
+      "mode": "view"
+    },
+    {
+      "name": "menu-bar",
+      "title": "Headroom Menu Bar",
+      "subtitle": "Headroom",
+      "description": "Today’s savings, session, lifetime and proxy status in the menu bar",
+      "mode": "menu-bar",
+      "interval": "5m",
+      "preferences": [
+        {
+          "name": "menuBarTitle",
+          "type": "dropdown",
+          "required": false,
+          "title": "Menu Bar Title",
+          "description": "What to display next to the icon in the menu bar",
+          "default": "todaySavings",
+          "data": [
+            {
+              "title": "Today’s Compression Savings",
+              "value": "todaySavings"
+            },
+            {
+              "title": "Today’s Compression Savings and Tokens",
+              "value": "todaySavingsTokens"
+            },
+            {
+              "title": "Today’s Cache Discount",
+              "value": "todayCacheDiscount"
+            },
+            {
+              "title": "Today’s Combined Savings",
+              "value": "todayCombinedSavings"
+            },
+            {
+              "title": "Today’s Input Cost",
+              "value": "todayInputCost"
+            },
+            {
+              "title": "Today’s Token Savings Percent",
+              "value": "todayTokenSavingsPercent"
+            },
+            {
+              "title": "Session Compression Savings",
+              "value": "sessionSavings"
+            },
+            {
+              "title": "Lifetime Compression Savings",
+              "value": "lifetimeSavings"
+            },
+            {
+              "title": "Cache Hit Rate",
+              "value": "cacheHitRate"
+            },
+            {
+              "title": "Anthropic 5-Hour Quota",
+              "value": "fiveHourQuota"
+            },
+            {
+              "title": "Anthropic 7-Day Quota",
+              "value": "sevenDayQuota"
+            },
+            {
+              "title": "Anthropic 5-Hour and 7-Day Quota",
+              "value": "bothQuotas"
+            },
+            {
+              "title": "None",
+              "value": "none"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "name": "get-savings-summary",
+      "title": "Get Savings Summary",
+      "description": "Get Headroom's compression savings (tokens and USD), provider prefix-cache discount, input cost and cost without Headroom for a time window, the current display session or lifetime, with a daily series, the top models and the change versus the previous equal-length window. Window: a `period` preset, `session`, `lifetime`, or explicit `startDate`/`endDate` (YYYY-MM-DD, inclusive, in the configured time zone; explicit dates override the preset). Weeks start on Monday. Defaults to the last 7 days."
+    },
+    {
+      "name": "get-model-savings",
+      "title": "Get Model Savings",
+      "description": "Rank models by compression savings, prefix-cache discount, input cost or tokens saved for a time window or lifetime. Use this to answer which model saved or cost the most. Window: a `period` preset, `lifetime`, or explicit `startDate`/`endDate` (YYYY-MM-DD, inclusive, in the configured time zone; explicit dates override the preset). Weeks start on Monday. Defaults to the last 7 days."
+    },
+    {
+      "name": "get-prefix-cache-stats",
+      "title": "Get Prefix Cache Stats",
+      "description": "Get provider prefix-cache statistics observed by Headroom: hit rate, cache read and write tokens, write premium, net discount in USD, cache busts and their cost in tokens, miss reasons and 5-minute versus 1-hour TTL mix, since the proxy started and lifetime, plus the cache discount for a time window."
+    },
+    {
+      "name": "get-compression-stats",
+      "title": "Get Compression Stats",
+      "description": "Get how Headroom compresses requests since the proxy started: compressed requests, average and best compression, tokens saved per strategy, router decisions, waste signals found in prompts, compression versus cache-bust trade-off, CCR retrievals and TOIN pattern stats."
+    },
+    {
+      "name": "get-agent-usage",
+      "title": "Get Agent Usage",
+      "description": "Get tokens before and after compression, tokens saved, savings percent, models and share of requests per client agent (Claude Code, Codex, …) since the proxy started."
+    },
+    {
+      "name": "get-subscription-quota",
+      "title": "Get Subscription Quota",
+      "description": "Get the Anthropic subscription windows Headroom tracks (5-hour, 7-day and per-model 7-day utilization, reset times, extra usage) with Headroom's contribution in the current window, plus OpenAI Codex rate limits and GitHub Copilot quotas when available."
+    },
+    {
+      "name": "get-proxy-health",
+      "title": "Get Proxy Health",
+      "description": "Get Headroom's readiness and liveness: version, uptime, per-component checks (upstream, cache, compression model, memory), deployment, request latency, overhead and time to first byte, error counts and persistence state."
+    },
+    {
+      "name": "get-recent-requests",
+      "title": "Get Recent Requests",
+      "description": "List the most recent requests Headroom proxied (newest first) with model, provider, tokens before and after optimization, tokens saved, transforms applied and latency. Only available when Headroom exposes per-request metadata to this client."
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^2.6.2",
+    "@raycast/utils": "^2.3.2"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^2.2.0",
+    "@types/node": "^22.20.5",
+    "@types/react": "19.0.10",
+    "eslint": "^9",
+    "prettier": "^3.9.9",
+    "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "build": "ray build -e dist",
+    "dev": "ray develop",
+    "install-local": "scripts/raycast-local.sh install",
+    "uninstall-local": "scripts/raycast-local.sh uninstall",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the `prepublishOnly` script and rerun `npm publish` again.\\nIf you wanted to publish it to the Raycast Store instead, use `npm run publish` instead.\\n\\n\" && exit 1",
+    "publish": "npx @raycast/api@latest publish"
+  },
+  "ai": {
+    "instructions": "\"Saved by Headroom\" means compressionSavingsUsd: input tokens Headroom's compression removed before forwarding, priced at the model's input rate. providerCacheDiscountUsd is the provider's prefix-cache discount that Headroom observes (Headroom only keeps prefixes stable to raise hit rates); report it separately and never present it as Headroom's own savings. combinedSavingsUsd adds both plus output-shaping savings; say so when you use it.\nCosts are USD estimates from Headroom's price table, not an invoice. costWithoutHeadroomUsd is the input cost plus compression savings.\nWindowed figures come from Headroom's savings history, which keeps a bounded number of checkpoints (5,000 by default). When a tool returns a warning about partial data, repeat it. In windows, requests counts only requests that saved something.\n\"session\" is Headroom's display session, which rolls over after an hour without requests. \"Since proxy start\" counters reset when Headroom restarts. Lifetime figures are persisted.\nAlways state the date range and time zone (the window object) that the figures cover. Weeks start on Monday. When the user names a relative period, pass the matching period preset instead of computing dates; use startDate and endDate only for explicit dates.\nToken hit rate weights by tokens; request hit rate counts requests with any cache read. If subscription tracking has no data, explain the reason the tool returns. If recent requests are unavailable, explain that Headroom must trust this client first.",
+    "evals": [
+      {
+        "input": "@headroom How much did Headroom save me today?",
+        "mocks": {
+          "get-savings-summary": {
+            "scope": "window",
+            "window": {
+              "period": "today",
+              "startDate": "2026-10-09",
+              "endDate": "2026-10-09",
+              "timezone": "America/Sao_Paulo",
+              "dayCount": 1
+            },
+            "totals": {
+              "compressionSavingsUsd": 26.8,
+              "tokensSaved": 6835786,
+              "tokenSavingsPercent": 1,
+              "inputCostUsd": 431.81,
+              "costWithoutHeadroomUsd": 458.61,
+              "inputTokensSent": 678357698,
+              "providerCacheDiscountUsd": 2471.22,
+              "cacheReadTokens": 612000000,
+              "combinedSavingsUsd": 2498.02,
+              "outputTokensSaved": 0,
+              "outputSavingsUsd": 0,
+              "requests": 2410
+            },
+            "previousWindow": {
+              "startDate": "2026-10-08",
+              "endDate": "2026-10-08",
+              "compressionSavingsUsd": 6.14,
+              "compressionSavingsChangePercent": 336.48,
+              "inputCostChangePercent": 124.3,
+              "cacheDiscountChangePercent": 97.4
+            },
+            "topModels": [
+              {
+                "model": "claude-opus-5-5",
+                "compressionSavingsUsd": 26.12,
+                "tokensSaved": 6710204,
+                "inputCostUsd": 420.4,
+                "providerCacheDiscountUsd": 2410.9,
+                "requests": 2302
+              },
+              {
+                "model": "claude-sonnet-5-5",
+                "compressionSavingsUsd": 0.68,
+                "tokensSaved": 125582,
+                "inputCostUsd": 11.41,
+                "providerCacheDiscountUsd": 60.32,
+                "requests": 108
+              }
+            ],
+            "series": [
+              {
+                "bucket": "2026-10-09T17:00",
+                "compressionSavingsUsd": 3.1,
+                "tokensSaved": 790000,
+                "inputCostUsd": 52.3,
+                "providerCacheDiscountUsd": 301.2
+              },
+              {
+                "bucket": "2026-10-09T18:00",
+                "compressionSavingsUsd": 2.4,
+                "tokensSaved": 610000,
+                "inputCostUsd": 40.1,
+                "providerCacheDiscountUsd": 255.8
+              }
+            ]
+          }
+        },
+        "expected": [
+          {
+            "callsTool": {
+              "name": "get-savings-summary",
+              "arguments": {
+                "period": {
+                  "eq": "today"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "input": "@headroom Which model saved the most this week?",
+        "mocks": {
+          "get-model-savings": {
+            "scope": "window",
+            "window": {
+              "period": "this-week",
+              "startDate": "2026-10-05",
+              "endDate": "2026-10-09",
+              "timezone": "America/Sao_Paulo",
+              "dayCount": 5
+            },
+            "sortedBy": "compression",
+            "totals": {
+              "compressionSavingsUsd": 32.94,
+              "tokensSaved": 8925856,
+              "inputCostUsd": 624.3,
+              "providerCacheDiscountUsd": 3723.08,
+              "requests": 4820
+            },
+            "rowCount": 2,
+            "rows": [
+              {
+                "model": "claude-opus-5-5",
+                "compressionSavingsUsd": 31.9,
+                "tokensSaved": 8590000,
+                "inputCostUsd": 598.2,
+                "providerCacheDiscountUsd": 3601.5,
+                "requests": 4580
+              },
+              {
+                "model": "claude-sonnet-5-5",
+                "compressionSavingsUsd": 1.04,
+                "tokensSaved": 335856,
+                "inputCostUsd": 26.1,
+                "providerCacheDiscountUsd": 121.58,
+                "requests": 240
+              }
+            ],
+            "warning": "Partial data: Headroom's savings history starts at Oct 07, 10:42 (America/Sao_Paulo); the window begins earlier, so earlier activity is missing."
+          }
+        },
+        "expected": [
+          {
+            "callsTool": {
+              "name": "get-model-savings",
+              "arguments": {
+                "period": {
+                  "eq": "this-week"
+                }
+              }
+            }
+          },
+          {
+            "includes": "claude-opus-5-5"
+          }
+        ]
+      },
+      {
+        "input": "@headroom What's my prefix cache hit rate?",
+        "mocks": {
+          "get-prefix-cache-stats": {
+            "window": {
+              "period": "last-7-days",
+              "startDate": "2026-10-03",
+              "endDate": "2026-10-09",
+              "timezone": "America/Sao_Paulo",
+              "dayCount": 7,
+              "providerCacheDiscountUsd": 3984.91,
+              "cacheReadTokens": 1210000000,
+              "discountChangePercent": null
+            },
+            "sinceProxyStart": {
+              "tokenHitRatePercent": 89.7,
+              "requestHitRatePercent": 96.9,
+              "hitRequests": 635,
+              "requests": 655,
+              "cacheReadTokens": 197177660,
+              "cacheWriteTokens": 9013271,
+              "uncachedInputTokens": 13512826,
+              "grossReadDiscountUsd": 709.84,
+              "writePremiumUsd": 9.01,
+              "netDiscountUsd": 700.83,
+              "cacheBusts": 52
+            },
+            "lifetime": {
+              "startedAt": "2026-09-01T20:53:12Z",
+              "discountUsd": 147591.83,
+              "tokenHitRatePercent": 91.97,
+              "requestHitRatePercent": 96.77,
+              "hitRequests": 99461,
+              "requests": 102777,
+              "ttl5mPercent": 43.8,
+              "ttl1hPercent": 56.2,
+              "cacheBusts": 1357,
+              "tokensLostToBusts": 248950828,
+              "missesByReason": {
+                "prefix_change": 492,
+                "unknown": 25,
+                "ttl_expiry": 5
+              }
+            }
+          }
+        },
+        "expected": [
+          {
+            "callsTool": "get-prefix-cache-stats"
+          }
+        ]
+      },
+      {
+        "input": "@headroom Is the proxy healthy?",
+        "mocks": {
+          "get-proxy-health": {
+            "ready": true,
+            "status": "healthy",
+            "version": "0.37.0",
+            "uptimeMinutes": 117.1,
+            "mode": "cache",
+            "checks": {
+              "startup": {
+                "status": "healthy",
+                "ready": true,
+                "enabled": true,
+                "error": null
+              },
+              "upstream": {
+                "status": "healthy",
+                "ready": true,
+                "enabled": true,
+                "error": null
+              },
+              "kompress": {
+                "status": "healthy",
+                "ready": true,
+                "enabled": true,
+                "error": null
+              },
+              "memory": {
+                "status": "disabled",
+                "ready": true,
+                "enabled": false,
+                "error": null
+              }
+            },
+            "sinceProxyStart": {
+              "requests": 658,
+              "failed": 1,
+              "rateLimited": 0,
+              "avgLatencyMs": 9383,
+              "avgHeadroomOverheadMs": 920,
+              "avgTimeToFirstByteMs": 2453,
+              "httpStatusCounts": {
+                "200": 1121,
+                "502": 4
+              }
+            }
+          }
+        },
+        "expected": [
+          {
+            "callsTool": "get-proxy-health"
+          }
+        ]
+      },
+      {
+        "input": "@headroom How close am I to my Claude 5-hour limit?",
+        "mocks": {
+          "get-subscription-quota": {
+            "anthropic": {
+              "tracking": "enabled",
+              "polledAt": "2026-10-09T20:45:00Z",
+              "fiveHour": {
+                "utilizationPercent": 64.5,
+                "remainingPercent": 35.5,
+                "resetsAt": "2026-10-09T23:10:00Z",
+                "estimated": false
+              },
+              "sevenDay": {
+                "utilizationPercent": 41.2,
+                "remainingPercent": 58.8,
+                "resetsAt": "2026-10-12T03:00:00Z",
+                "estimated": false
+              }
+            },
+            "codex": null,
+            "copilot": null
+          }
+        },
+        "expected": [
+          {
+            "callsTool": "get-subscription-quota"
+          }
+        ]
+      },
+      {
+        "input": "@headroom Which compression strategy saves the most tokens?",
+        "mocks": {
+          "get-compression-stats": {
+            "mode": "cache",
+            "sinceProxyStart": {
+              "tokensSaved": 2304073,
+              "tokenSavingsPercent": 1.07,
+              "requestsCompressed": 658,
+              "avgCompressionPercent": 1.9,
+              "bestCompressionPercent": 19
+            },
+            "strategies": [
+              {
+                "name": "code_aware",
+                "compressions": 66,
+                "tokensSaved": 29545
+              },
+              {
+                "name": "text",
+                "compressions": 396,
+                "tokensSaved": 12145
+              },
+              {
+                "name": "smart_crusher",
+                "compressions": 189,
+                "tokensSaved": 7998
+              }
+            ]
+          }
+        },
+        "expected": [
+          {
+            "callsTool": "get-compression-stats"
+          },
+          {
+            "includes": "code"
+          }
+        ]
+      }
+    ]
+  }
+}
