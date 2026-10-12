@@ -6,6 +6,7 @@
   "icon": "extension-icon.png",
   "author": "nmindz",
   "license": "MIT",
+  "packageManager": "pnpm@12.11.2",
   "categories": [
     "Developer Tools"
   ],
@@ -249,8 +250,8 @@
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the `prepublishOnly` script and rerun `npm publish` again.\\nIf you wanted to publish it to the Raycast Store instead, use `npm run publish` instead.\\n\\n\" && exit 1",
-    "publish": "npx @raycast/api@latest publish"
+    "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the `prepublishOnly` script and rerun `npm publish` again.\\nIf you wanted to publish it to the Raycast Store instead, use `pnpm run publish` instead.\\n\\n\" && exit 1",
+    "publish": "pnpm dlx --package=@raycast/api@latest ray publish"
   },
   "ai": {
     "instructions": "\"Saved by Headroom\" means compressionSavingsUsd: input tokens Headroom's compression removed before forwarding, priced at the model's input rate. providerCacheDiscountUsd is the provider's prefix-cache discount that Headroom observes (Headroom only keeps prefixes stable to raise hit rates); report it separately and never present it as Headroom's own savings. combinedSavingsUsd adds both plus output-shaping savings; say so when you use it.\nCosts are USD estimates from Headroom's price table, not an invoice. costWithoutHeadroomUsd is the input cost plus compression savings.\nWindowed figures come from Headroom's savings history, which keeps a bounded number of checkpoints (5,000 by default). When a tool returns a warning about partial data, repeat it. In windows, requests counts only requests that saved something.\n\"session\" is Headroom's display session, which rolls over after an hour without requests. \"Since proxy start\" counters reset when Headroom restarts. Lifetime figures are persisted.\nAlways state the date range and time zone (the window object) that the figures cover. Weeks start on Monday. When the user names a relative period, pass the matching period preset instead of computing dates; use startDate and endDate only for explicit dates.\nToken hit rate weights by tokens; request hit rate counts requests with any cache read. If subscription tracking has no data, explain the reason the tool returns. If recent requests are unavailable, explain that Headroom must trust this client first.",

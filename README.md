@@ -24,9 +24,9 @@ make install
 | Raycast 1              | `com.raycast.macos`   | `~/.config/raycast/extensions/headroom`   | `ray build` into the folder, then a restart (Raycast 1 scans it at launch)         |
 | Raycast Beta           | `com.raycast-x.macos` | `~/.config/raycast-x/extensions/headroom` | a short `ray develop` session with the Raycast Beta CLI (`@raycast/api@latest-v0`) |
 
-The script reads the version of `com.raycast.macos` to tell Raycast 2 from Raycast 1. Raycast 2 and Raycast Beta only register a local extension through the develop handshake (a `raycast://cli/…` deep link that also launches the app if needed), so they are never restarted; the session stops after the first successful build and the extension stays installed. `make install` runs `npm ci` first when `node_modules` is missing or older than `package-lock.json`. Run it again after pulling changes. `make uninstall` removes the build from every folder and restarts the running apps; `make restart-raycast` only restarts them.
+The script reads the version of `com.raycast.macos` to tell Raycast 2 from Raycast 1. Raycast 2 and Raycast Beta only register a local extension through the develop handshake (a `raycast://cli/…` deep link that also launches the app if needed), so they are never restarted; the session stops after the first successful build and the extension stays installed. `make install` runs `pnpm install --frozen-lockfile` first when `node_modules` is missing or older than `pnpm-lock.yaml`. Run it again after pulling changes. `make uninstall` removes the build from every folder and restarts the running apps; `make restart-raycast` only restarts them.
 
-Without `make`: `npm ci && npm run install-local`.
+Without `make`: `pnpm install --frozen-lockfile && pnpm run install-local`.
 
 ## Setup
 
@@ -125,8 +125,8 @@ Tools: `get-savings-summary`, `get-model-savings`, `get-prefix-cache-stats`, `ge
 ## Development
 
 ```bash
-npm install
-npm run dev
-npm run build
-npm run lint
+pnpm install
+pnpm run dev
+pnpm run build
+pnpm run lint
 ```

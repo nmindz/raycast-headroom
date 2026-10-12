@@ -16,6 +16,6 @@ restart-raycast:
 	@scripts/raycast-local.sh restart
 
 # Reinstalls only when the lockfile changed since the last install.
-node_modules: package-lock.json
-	npm ci
+node_modules: pnpm-lock.yaml
+	pnpm install --frozen-lockfile
 	@touch node_modules

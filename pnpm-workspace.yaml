@@ -1,0 +1,4 @@
+allowBuilds:
+  # esbuild ships a prebuilt platform binary that its install script links.
+  # `ray build` bundles with esbuild, so this must be allowed to run.
+  esbuild: true

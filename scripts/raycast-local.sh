@@ -54,7 +54,7 @@ restart_app() {
 # Raycast 1: build into the folder it scans at launch, then restart it.
 install_folder() {
   rm -rf "$RETAIL_DIR"
-  npx ray build -e dist -o "$RETAIL_DIR"
+  pnpm exec ray build -e dist -o "$RETAIL_DIR"
   echo "installed into $RETAIL_DIR"
   restart_app "$RETAIL"
 }
@@ -67,8 +67,11 @@ install_develop() {
   shift 2
   log=$(mktemp)
 
+  # Own process group: pnpm does not forward SIGINT to `ray develop`, so the whole group is signalled.
+  set -m
   "$@" >"$log" 2>&1 &
   cli=$!
+  set +m
 
   # Up to 3 min for the first build.
   for _ in $(seq 900); do
@@ -80,7 +83,7 @@ install_develop() {
   built=0
   grep -q 'built extension successfully' "$log" && built=1
 
-  kill -INT "$cli" 2>/dev/null || true
+  kill -INT -- "-$cli" 2>/dev/null || true
   wait "$cli" 2>/dev/null || true
 
   if [ "$built" -eq 0 ]; then
@@ -101,7 +104,7 @@ install() {
     found=1
     version=$(app_version "$RETAIL")
     if [ "${version%%.*}" -ge 2 ]; then
-      install_develop "Raycast $version" "$RETAIL_DIR" npx ray develop
+      install_develop "Raycast $version" "$RETAIL_DIR" pnpm exec ray develop
     else
       install_folder
     fi
@@ -109,7 +112,7 @@ install() {
 
   if installed "$BETA"; then
     found=1
-    install_develop "Raycast Beta" "$BETA_DIR" env RAY_Target=x npx -y -p "$BETA_CLI" ray develop
+    install_develop "Raycast Beta" "$BETA_DIR" env RAY_Target=x pnpm dlx --package="$BETA_CLI" ray develop
   fi
 
   if [ "$found" -eq 0 ]; then
