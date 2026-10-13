@@ -130,3 +130,7 @@ pnpm run dev
 pnpm run build
 pnpm run lint
 ```
+
+## License
+
+MIT — see [LICENSE](LICENSE).
