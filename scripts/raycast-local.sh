@@ -4,6 +4,9 @@
 # ~/.config/raycast/extensions/<name> at launch.
 set -eu
 
+# `ray` and `pnpm` act on the current directory: run from the project root wherever the script is called from.
+cd -- "$(dirname -- "$0")/.."
+
 NAME=headroom
 RETAIL=com.raycast.macos
 BETA=com.raycast-x.macos
